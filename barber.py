@@ -3,16 +3,15 @@ import threading
 import time
 import random
 
-def randtime():
-	time.sleep(random.uniform(0, 0.0001))
+def randtime(multiplier = 1):
+	time.sleep(random.uniform(0, 0.1 * multiplier))
 
-nchairs = 10
+nchairs = 5
 
 CUTTING = 1
 SLEEPING = 2
 NOTHING = 3
-
-
+DONE = 4
 
 class Customer(threading.Thread):
 	def __init__(self, wr, barber, id):
@@ -41,7 +40,7 @@ class Barber(threading.Thread):
 	def run(self):
 		print("barber has started, and going to sleep")
 		self.sleep()
-		while True:
+		while self.status != DONE:
 			print("barber checks waiting room")
 			if len(self.wr) > 0:
 				print("\t[", end='')
@@ -72,6 +71,10 @@ class Barber(threading.Thread):
 	
 	def wake(self):
 		self.status = NOTHING
+	
+	def finish(self):
+		print("barber is asked to finish")
+		self.status = DONE
 
 class Checker(threading.Thread):
 	def __init__(self, wr, barber, errors):
@@ -79,22 +82,25 @@ class Checker(threading.Thread):
 		self.wr = wr
 		self.barber = barber
 		self.errors = errors
+		self.check = True
 		
 	def run(self):
-		while True:
+		while self.check:
 			if self.wr and self.barber.status == SLEEPING:
 				print("!!!!!!!!!!!!!!!!!!!! barber is sleeping when customers are waiting")
 				self.errors["sleep"] += 1
 			if len(self.wr) > 10:
 				print("!!!!!!!!!!!!!!!!!!!! list error")
 				self.errors["wr"] += 1
+			randtime()
 
 waiting_room = []
 
 threads = []
 
-barber = Barber(waiting_room)	
-barber.start()	
+barber = Barber(waiting_room)
+
+barber.start()
 errors = {
 	"sleep": 0,
 	"wr": 0
@@ -103,11 +109,15 @@ errors = {
 checker = Checker(waiting_room, barber, errors)
 checker.start()
 
-
-
 for i in range(1000):
 	Customer(waiting_room, barber, i).start()
-	randtime()
+	randtime(2)
+
+	
 while waiting_room:
 	pass
+	
+barber.finish()
+barber.join()
+
 print(errors)
