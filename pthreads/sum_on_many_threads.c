@@ -5,6 +5,7 @@
 struct sum_runner_struct {
 	long long limit;
 	long long answer;
+	int exit;
 };
 
 // Thread function to generate sum of 0 to N
@@ -20,6 +21,7 @@ void* sum_runner(void* arg)
 
 	arg_struct->answer = sum;
 
+	arg_struct->exit = 1;
 	pthread_exit(0);
 }
 
@@ -40,13 +42,24 @@ int main(int argc, char **argv)
 
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
+		args[i].exit = 0;
 		pthread_create(&tids[i], &attr, sum_runner, &args[i]);
 	}
 
 	// Wait until thread is done its work
-	for (int i = 0; i < num_args; i++) {
-		pthread_join(tids[i], NULL);
-		printf("Sum for thread %d is %lld\n",
-				i, args[i].answer);
+	int err;
+	while(1) {
+		err = 0;
+		for (int i = 0; i < num_args; i++) {
+			if (args[i].exit == 1) {
+				printf("Sum for thread %d is %lld\n", i, args[i].answer);
+				args[i].exit = -1;
+			}
+			else if (!args[i].exit)
+				err++;
+			// pthread_join(tids[i], NULL);
+		}
+		if (!err)
+			break;
 	}
 }

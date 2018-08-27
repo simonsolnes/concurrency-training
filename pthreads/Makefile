@@ -2,8 +2,6 @@
 # by Brian Fraser
 
 # Edit this file to compile extra C files into their own programs.
-#TARGETS= sum_on_thread sum_on_many_threads sum_malloc
-TARGETS= sum_malloc
 
 CROSS_TOOL = 
 CC_CPP = $(CROSS_TOOL)g++
@@ -11,10 +9,15 @@ CC_C = $(CROSS_TOOL)gcc
 
 CFLAGS = -Wall -g -std=c99 -Werror -pthread
 
-all: clean $(TARGETS)
+all: clean many
 
-$(TARGETS):
-	$(CC_C) $(CFLAGS) $@.c -o $@ 
+.PHONY: one
+one:
+	$(CC_C) $(CFLAGS) sum_on_thread.c -o sum_on_thread
+
+.PHONY: many
+many:
+	$(CC_C) $(CFLAGS) sum_on_many_threads.c -o sum_on_many_threads
 
 clean:
-	rm -f $(TARGETS)
+	rm -f sum_on_thread sum_on_many_threads
